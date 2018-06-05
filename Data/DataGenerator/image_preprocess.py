@@ -9,13 +9,13 @@ from keras.preprocessing.image import ImageDataGenerator, img_to_array, load_img
 
 
 
-def crawling_image(keyword, max, min_size, dir):
+def crawling_image(keyword, max_num, min_size, save_dir):
     # 구글 이미지 크롤러 함수
     # Argument
-    # keyword : 수집하기 위한 검색 키워드 - 필수 입력 값
-    # max   : 저장이미지 최대 수 - 필수 입력 값
+    # search_keyword : 수집하기 위한 검색 키워드 - 필수 입력 값
+    # max_num   : 저장이미지 최대 수 - 필수 입력 값
     # min_size : 이미지 최소 사이즈  - None 일 경우 상관없이 수집
-    # dir : 이미지 저장 경로  - 필수 입력값
+    # save_dir : 이미지 저장 경로  - 필수 입력값
     # 이미지 경로 기본값 :./Data/Dataset/분석명/Raw
 
     # ex : crawling_image('"bearing"',10,None,'..\\Dataset\\Bearing\\Raw\\dearing')
@@ -23,22 +23,22 @@ def crawling_image(keyword, max, min_size, dir):
     # Return
     # "complete download imgages" 문구 출력
 
-    google_crawler = GoogleImageCrawler(parser_threads=2, downloader_threads=10, storage={'root_dir': dir})
+    pathlib.Path(save_dir).mkdir(parents=True, exist_ok=True)
+
+    google_crawler = GoogleImageCrawler(parser_threads=2, downloader_threads=10, storage={'root_dir': save_dir})
     if min_size is None :
-        google_crawler.crawl(keyword=keyword, offset=0, max_num=max, min_size=None, max_size=None)
+        google_crawler.crawl(keyword=keyword, offset=0, max_num=max_num, min_size=None, max_size=None)
     else :
-        google_crawler.crawl(keyword=keyword, offset=0, max_num=max, min_size=(min_size, min_size), max_size=None)
+        google_crawler.crawl(keyword=keyword, offset=0, max_num=max_num, min_size=(min_size, min_size), max_size=None)
 
-    print('complete download', keyword ,' images')
+    print('Complete download', keyword ,' images')
 
-crawling_image('"bearing"',10,None,'..\\Dataset\\Bearing\\Raw\\bearing')
-
-def  change_image(dir, savedir , keyword, extension='png' , change_size=(256,256), color=None, delete=0):
+def change_image(dir, save_dir , keyword, extension='png' , change_size=(256,256), color=None, delete=0):
     # 이미지 정제 및 변환 함수
     # 이미지 사이즈 , 확장자 변경, 사이즈 변경 , 색상 변경이 가능함
     # Argument
     # dir : 일괄 변경할 이미지 폴더 경로 : 상위 폴더일 경우 하위 디렉토리의 파일 모두 변경 가능
-    # savedir : 변경이미지 저장 경로
+    # save_dir : 변경이미지 저장 경로
     # keyword : 변경한 이미지 앞에 붙일 키워드
     # extension : 변경확장자 , 'png' , 'jpeg','jpg' - 기본값 png
     # change_size : 변경할 이미지 사이즈 (높이height,넓이width) - 기본값 256,256
@@ -51,23 +51,16 @@ def  change_image(dir, savedir , keyword, extension='png' , change_size=(256,256
     change_size = tuple(change_size)
 
     # 이미지 저장경로 확인 및 생성
-    savedir = os.path.join(savedir,keyword)
+    imgdir = os.path.join(dir,keyword)
+    savedir = os.path.join(save_dir,keyword)
     pathlib.Path(savedir).mkdir(parents=True, exist_ok=True)
 
     #현재위치 파일 모두 가져온다.
-    for filename in os.listdir(dir):
-        img_dir = os.path.join(dir,filename)
+    for filename in os.listdir(imgdir):
+        img_dir = os.path.join(imgdir,filename)
+        convert_img = convert_image(img_dir,savedir,keyword,filename,extension,change_size,color,delete)
 
-        if os.path.isdir(img_dir):
-            for sub_filename in os.listdir(img_dir):
-                sub_img_dir = os.path.join(img_dir,sub_filename)
-                convert_img = convert_image(sub_img_dir,savedir,keyword,sub_filename,extension, change_size, color,delete)
-        elif os.path.isfile(img_dir):
-            convert_img = convert_image(img_dir,savedir,keyword,filename,extension,change_size,color,delete)
-        else :
-            print('Check Image Path')
-
-    print('complete change images')
+    return convert_img
 
 
 def convert_image(img_dir,savedir,keyword,filename,extension, change_size=(256,256), color=None,delete=0):
@@ -93,7 +86,7 @@ def convert_image(img_dir,savedir,keyword,filename,extension, change_size=(256,2
             if change_size is None :
                 resize_img = img
             else :
-                resize_img = img.resize(change_size[0],change_size[1])
+                resize_img = img.resize(change_size)
             # 이미지 컬러 변경
             if color == 'L':
                 color_img = resize_img.convert("L")
@@ -113,6 +106,8 @@ def convert_image(img_dir,savedir,keyword,filename,extension, change_size=(256,2
         except :
             print('cannot open ',img_dir, savedir)
 
+    EndMessage = 'Convert Done : '+keyword
+    return EndMessage
 
 def image_folder_merge(img_dir, merge_dir, merge_keyword):
     # 이미지 폴더 병합 함수 생성
