@@ -127,11 +127,12 @@ def image_folder_merge(img_dir, merge_dir, merge_keyword):
 
     print('Complete merge images like ',merge_keyword)
 
-def generator_fake_image(img_num,save_dir,prefix_keyword,save_extension='png'):
+def generator_fake_image(img_num,img_dir,save_dir,prefix_keyword,save_extension='png'):
     # keras.ImageDataGenerator() 로 생성한 fake 이미지 저장하는 함수
     # Argument
     # img_num : 생성하고자하는 이미지 갯수
-    # save_dir : 이미지 저장 경로
+    # img_dir : 대상 이미지 저장 경로
+    # save_dir : 변환된 이미지 저장 경로
     # prefix_keyword : 이미지 저장 파일명
     # save_extension : 이미지 저장 확장자
 
@@ -146,19 +147,67 @@ def generator_fake_image(img_num,save_dir,prefix_keyword,save_extension='png'):
         fill_mode='nearest'  # 회전 또는 너비/높이 이동 후에 나타날 수 있는 공간에 새로운 픽셀로 채우는 전략
     )
 
-    for filename in os.listdir(save_dir):
-        img = load_img(os.path.join(save_dir,filename))
+    for filename in os.listdir(img_dir):
+        img = load_img(os.path.join(img_dir,filename))
         x = img_to_array(img)  # (3,100,100)
         x = x.reshape((1,) + x.shape)  # numpy array with shape(1,1,100,100)
 
         i = 0
-        for batch in datagen.flow(x, batch_size=1,
-                                  save_to_dir=save_dir,
-                                  save_prefix=prefix_keyword,
-                                  save_format=save_extension):
+        for batch in datagen.flow(x,save_to_dir=save_dir,
+                    save_prefix=prefix_keyword,
+                    save_format=save_extension):
             i += 1
             if i > img_num:
                 break
+
+def fill_fake_image(img_dir, img_num , chagne_num):
+    #Argument
+    # img_dir : 이미지가 저장되어있는 경로
+    # img_num : 폴더당 목표로 하는 이미지 갯수
+    # change_num : 하나의 이미지에서 변경할 이미지수
+    for folder_name in os.listdir(img_dir):
+        image_dir = os.path.join(img_dir, folder_name)
+        print(image_dir)
+        # 폴더의 파일 갯수 찾기
+        create_num = img_num
+        make_num = chagne_num
+        # 폴더에 존재하는 이미지 갯수
+        num = len(os.listdir(image_dir))
+        substract_num = create_num - num
+
+        if substract_num != 0:
+            datagen = ImageDataGenerator(
+                                            rotation_range=40,  # 0 ~ 180 까지 사진 회전
+                                            width_shift_range=0.2,  # 수직적, 수평적으로 범위를 조정
+                                            height_shift_range=0.2,  #
+                                            rescale=1. / 255,  # 0~1 사이의 값으로 표준화
+                                            shear_range=0.2,  # shearing transformations :
+                                            zoom_range=0.2,  # 랜덤하게 zoom in
+                                            horizontal_flip=True,  # 이미지의 절반을 무작위로 수평으로 뒤집는것
+                                            fill_mode='nearest'  # 회전 또는 너비/높이 이동 후에 나타날 수 있는 공간에 새로운 픽셀로 채우는 전략
+                                        )
+
+            list = os.listdir(image_dir)
+            # 디렉토리내에 파일 섞어서 랜덤한 데이터 옮기기
+            random.shuffle(list)
+            # 이미지 갯수 확인하고 데이터 분리 기준
+            for filename in list:
+                # for filename in os.listdir(img_dir):
+                img = load_img(os.path.join(image_dir, filename))
+                x = img_to_array(img)  # (3,100,100)
+                x = x.reshape((1,) + x.shape)  # numpy array with shape(1,1,100,100)
+                i = 0
+                for batch in datagen.flow(x, batch_size=1,
+                                          save_to_dir=image_dir,
+                                          save_prefix=folder_name,
+                                          save_format='png'):
+                    i += 1
+                    if i == make_num:
+                        break
+                num += 1
+                if num == create_num:
+                    break
+
 
 def create_train_folder(image_dir, save_dir, lable_name , train_percent='0.7' ,delete=0):
 
@@ -177,15 +226,15 @@ def create_train_folder(image_dir, save_dir, lable_name , train_percent='0.7' ,d
     # 이미지 갯수 확인하고 데이터 분리 기준
     index = round(len(os.listdir(image_dir)) * train_percent)
 
-    # 이미지 데이터 분리
 
+    # 이미지 데이터 분리
     for filename in list[:index]:
         image_file_dir = os.path.join(image_dir,filename)
         shutil.copy(image_file_dir, train_dir)
 
     for filename in list[index:]:
         image_file_dir = os.path.join(image_dir, filename)
-        shutil.copy(image_file_dir, train_dir)
+        shutil.copy(image_file_dir, test_dir)
 
     if delete == 1 :
         os.rmdir(image_dir)
