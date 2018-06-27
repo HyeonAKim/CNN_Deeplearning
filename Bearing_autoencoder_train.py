@@ -2,13 +2,16 @@
 from keras.preprocessing.image import ImageDataGenerator
 import numpy as np
 from matplotlib import pyplot as plt
-
+from sklearn.model_selection import train_test_split
+from keras import Model
+from keras.layers import Input, Conv2D, MaxPool2D, UpSampling2D, Dense, Dropout, Flatten
+from keras.models import Model
+from keras.optimizers import RMSprop
 
 ## 1. 이미지 데이터 셋팅
 img_width, img_height = 100  , 100
 
 train_data_dir = 'C:\\Users\\HyunA\\PycharmProjects\\CNN_Deeplearning\\Data\\Dataset\\Bearing\\train'
-test_date_dir = 'C:\\Users\\HyunA\\PycharmProjects\\CNN_Deeplearning\\Data\\Dataset\\Bearing\\test'
 nb_train_samples  = 280
 nb_test_samples = 120
 
@@ -68,7 +71,6 @@ label_list = sorted(label_list)
 print(label_list)
 
 ## 5. train, validation 데이터 분리하기
-from sklearn.model_selection import train_test_split
 
 train_X, valid_X, train_labels, valid_labels = train_test_split(x_batch, y_batch, test_size=0.2, random_state=13)
 
@@ -102,10 +104,7 @@ plt.imshow(curr_img, cmap='gray')
 
 plt.show()
 
-from keras import Model
-from keras.layers import Input, Conv2D, MaxPool2D, UpSampling2D, Dense, Dropout, Flatten
-from keras.models import Model
-from keras.optimizers import RMSprop
+
 
 ## 7. denosing autoencoder network
 batch_size = 70

@@ -7,6 +7,7 @@ import numpy as np
 ## 1. 이미지 데이터 셋팅
 img_width, img_height = 100  , 100
 
+
 test_date_dir = 'C:\\Users\\HyunA\\PycharmProjects\\CNN_Deeplearning\\Data\\Dataset\\Bearing\\test'
 nb_test_samples = 120
 
